@@ -1,0 +1,51 @@
+name: Docker CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Checkout du code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Étape 2 : Configuration de Maven
+      - name: Set up Maven
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      # Étape 3 : Build avec Maven
+      - name: Build with Maven
+        run: mvn clean install
+
+      # Étape 4 : Analyse SonarQube
+      - name: SonarQube Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=projetg \
+            -Dsonar.host.url=http://localhost:9000 \
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+
+      # Étape 5 : Login à Docker Hub
+      - name: Login to Docker Hub
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
+      # Étape 6 : Build de l'image Docker
+      - name: Build Docker image
+        run: docker build -t mushhh/projetg .
+
+      # Étape 7 : Push de l'image Docker
+      - name: Push Docker image
+        run: docker push mushhh/projetg

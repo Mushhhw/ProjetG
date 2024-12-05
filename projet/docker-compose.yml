@@ -1,0 +1,44 @@
+
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: webserver
+    ports:
+      - '8081:80'
+      - '8443:443'
+    volumes:
+      - ./web/html:/var/www/html
+      - ./web/certs:/etc/ssl/certs
+      - ./web/private:/etc/ssl/private
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+  db:
+    image: mariadb:latest
+    container_name: mariadb
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root_password'
+      MYSQL_DATABASE: 'projet'
+      MYSQL_USER: 'projet'
+      MYSQL_PASSWORD: 'Gb67SNBn??NyAsmt'
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./db-init:/docker-entrypoint-initdb.d
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
